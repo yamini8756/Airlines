@@ -5,9 +5,7 @@ pipeline {
         MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
     }
 
-    tools {
-        maven 'M3' // Make sure this matches your Jenkins Maven tool name
-    }
+    // Removed tools block — you are using ./mvnw, so no need for Jenkins Maven config
 
     stages {
         stage('Checkout') {
@@ -32,7 +30,7 @@ pipeline {
             }
         }
 
-        // Optional: Comment this out if DockerHub push is not ready
+        // Optional: Commented out Dockerhub stage
         /*
         stage('Dockerhub') {
             steps {
@@ -45,17 +43,14 @@ pipeline {
 
     post {
         always {
-            node {
-                cleanWs()
-            }
+            cleanWs() // ✅ runs within the pipeline's agent, no need to wrap with node
         }
         success {
             echo '✅ Build succeeded'
         }
         failure {
             echo '❌ Build failed'
-            // Remove this or configure email properly
-            // mail to: 'admin@example.com', subject: 'Build failed', body: 'Check Jenkins!'
+            // mail step removed to avoid SMTP errors
         }
     }
 }
