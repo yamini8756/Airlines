@@ -5,8 +5,6 @@ pipeline {
         MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
     }
 
-    // Removed tools block — you are using ./mvnw, so no need for Jenkins Maven config
-
     stages {
         stage('Checkout') {
             steps {
@@ -17,7 +15,7 @@ pipeline {
         stage('Build & Test') {
             steps {
                 dir('airlines') {
-                    sh './mvnw clean install'
+                    bat 'mvnw.cmd clean install'
                 }
             }
         }
@@ -25,17 +23,16 @@ pipeline {
         stage('Package') {
             steps {
                 dir('airlines') {
-                    sh './mvnw package'
+                    bat 'mvnw.cmd package'
                 }
             }
         }
 
-        // Optional: Commented out Dockerhub stage
+        // Optional: Comment out Dockerhub stage if not using
         /*
         stage('Dockerhub') {
             steps {
                 echo 'Push image to Dockerhub'
-                // Add docker build/push logic here if needed
             }
         }
         */
@@ -43,14 +40,13 @@ pipeline {
 
     post {
         always {
-            cleanWs() // ✅ runs within the pipeline's agent, no need to wrap with node
+            cleanWs()
         }
         success {
             echo '✅ Build succeeded'
         }
         failure {
             echo '❌ Build failed'
-            // mail step removed to avoid SMTP errors
         }
     }
 }
