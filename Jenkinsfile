@@ -1,55 +1,61 @@
 pipeline {
-  agent any
-  environment {
-    IMAGE         = 'yamini8756/airlines'
-    DOCKER_CRED   = credentials('dockerhub')
-    KUBECONFIG_ID = 'kubeconfig-minikube'
-  }
-  stages {
-    stage('1. Checkout') {
-      steps { git url: 'https://github.com/yamini8756/Airlines.git', branch: 'main' }
+    agent any
+
+    environment {
+        MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
     }
-    stage('2. Build (Maven)') {
-      steps { sh 'mvn clean package -DskipTests' }
+
+    tools {
+        maven 'M3' // Make sure this matches your Jenkins Maven tool name
     }
-    stage('3. Build & Tag Docker') {
-      steps {
-        script {
-          dockerImage = docker.build("${IMAGE}:${BUILD_ID}")
-          sh "docker tag ${IMAGE}:${BUILD_ID} ${IMAGE}:latest"
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-    }
-    stage('4. Push to Docker Hub') {
-      steps {
-        script {
-          docker.withRegistry('', 'dockerhub') {
-            dockerImage.push()
-            dockerImage.push('latest')
-          }
+
+        stage('Build & Test') {
+            steps {
+                dir('airlines') {
+                    sh './mvnw clean install'
+                }
+            }
         }
-      }
-    }
-    stage('5. Deploy to Kubernetes') {
-      steps {
-        withKubeConfig(credentialsId: "${KUBECONFIG_ID}") {
-          sh 'kubectl apply -f k8s/'
-          sh "kubectl set image deployment/airlines-app airlines=${IMAGE}:${BUILD_ID}"
+
+        stage('Package') {
+            steps {
+                dir('airlines') {
+                    sh './mvnw package'
+                }
+            }
         }
-      }
+
+        // Optional: Comment this out if DockerHub push is not ready
+        /*
+        stage('Dockerhub') {
+            steps {
+                echo 'Push image to Dockerhub'
+                // Add docker build/push logic here if needed
+            }
+        }
+        */
     }
-  }
-  post {
-    success {
-      mail to: 'yaminiadiri8@gmail.com',
-           subject: "✅ Build & Deploy #${BUILD_ID} Successful",
-           body: "Your Airlines app is live!"
+
+    post {
+        always {
+            node {
+                cleanWs()
+            }
+        }
+        success {
+            echo '✅ Build succeeded'
+        }
+        failure {
+            echo '❌ Build failed'
+            // Remove this or configure email properly
+            // mail to: 'admin@example.com', subject: 'Build failed', body: 'Check Jenkins!'
+        }
     }
-    failure {
-      mail to: 'yaminiadiri8@gmail.com',
-           subject: "❌ Build #${BUILD_ID} Failed",
-           body: "Check Jenkins logs."
-    }
-    always { cleanWs() }
-  }
 }
