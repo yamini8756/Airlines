@@ -12,6 +12,10 @@ spec:
       labels:
         app: airlines
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox
+          command: ['sh', '-c', 'until nc -z mysql 3306; do echo waiting for mysql; sleep 5; done']
       containers:
         - name: airlines-app
           image: yamini8756/airlines:latest
@@ -26,4 +30,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
-                  key: password
+                  key: mysql-root-password
