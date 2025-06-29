@@ -14,28 +14,15 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                dir('airlines') {
-                    bat 'mvnw.cmd clean install'
-                }
+                bat 'mvnw.cmd clean install'
             }
         }
 
         stage('Package') {
             steps {
-                dir('airlines') {
-                    bat 'mvnw.cmd package'
-                }
+                bat 'mvnw.cmd package'
             }
         }
-
-        // Optional: Comment out Dockerhub stage if not using
-        /*
-        stage('Dockerhub') {
-            steps {
-                echo 'Push image to Dockerhub'
-            }
-        }
-        */
     }
 
     post {
